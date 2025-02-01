@@ -1,8 +1,0 @@
-fastapi
-uvicorn
-celery
-redis
-reportlab
-python-multipart
-torch
-pytest
