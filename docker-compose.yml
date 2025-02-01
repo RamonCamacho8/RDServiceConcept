@@ -1,35 +1,36 @@
 version: '3.8'
 
 services:
-  frontend:
-    build: ./client
-    ports:
-      - "3000:3000"
-    environment:
-      - REACT_APP_API_URL=http://backend:8000
-    depends_on:
-      - backend
-
-  backend:
-    build: ./server
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./server/app/models:/app/app/models
-      - ./reports:/app/reports
-    depends_on:
-      - redis
-      - celery
-
-  celery:
-    build: ./server
-    command: celery -A app.tasks.celery worker --loglevel=info
-    volumes:
-      - ./server/app:/app/app
-    depends_on:
-      - redis
-
   redis:
-    image: redis:alpine
+    image: redis:latest
     ports:
       - "6379:6379"
+
+  backend:
+    build:
+      context: ./backend
+    container_name: backend
+    volumes:
+      - ./backend/uploads:/app/uploads
+      - ./backend/reports:/app/reports
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+
+  celery_worker:
+    build:
+      context: ./backend
+    command: celery -A app.celery_worker worker --loglevel=info
+    volumes:
+      - ./backend/uploads:/app/uploads
+      - ./backend/reports:/app/reports
+    depends_on:
+      - redis
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: frontend
+    ports:
+      - "3000:3000"
