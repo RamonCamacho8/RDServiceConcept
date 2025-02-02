@@ -1,10 +1,11 @@
+// File: client/src/components/FileUpload.jsx
 import { useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
 
-const FileUpload = ({ onUpload }) => {
+const FileUpload = ({ onFilesSelected }) => {
   const onDrop = useCallback(acceptedFiles => {
-    onUpload(acceptedFiles)
-  }, [onUpload])
+    onFilesSelected(acceptedFiles)
+  }, [onFilesSelected])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,

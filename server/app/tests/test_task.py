@@ -2,6 +2,11 @@ import pytest
 from app.tasks import process_images_task
 from app.core.models import MockAIModels
 
+from app.tasks import celery
+celery.conf.task_always_eager = True
+celery.conf.task_eager_propagates = True
+
+
 @pytest.fixture
 def mock_images():
     return [b"fake_image_data"] * 3

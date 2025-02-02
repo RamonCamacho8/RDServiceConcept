@@ -1,6 +1,11 @@
 from app.core.models import MockAIModels
 import pytest
 
+from app.tasks import celery
+celery.conf.task_always_eager = True
+celery.conf.task_eager_propagates = True
+
+
 def test_quality_check():
     model = MockAIModels()
     images = [b"data"] * 3

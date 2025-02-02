@@ -1,18 +1,23 @@
 import { useEffect, useState } from 'react'
 import { getJobStatus } from '../api'
 
-const JobStatus = ({ jobId }) => {
-  const [status, setStatus] = useState('pending')
+const JobStatus = ({ jobId, onComplete }) => {
+  const [status, setStatus] = useState('pending');
   
   useEffect(() => {
     const interval = setInterval(async () => {
-      const response = await getJobStatus(jobId)
-      setStatus(response.data.status)
-      if (response.data.status === 'completed') clearInterval(interval)
-    }, 2000)
+      const response = await getJobStatus(jobId);
+      const currentStatus = response.data.status;
+      setStatus(currentStatus);
+      if (currentStatus === 'completed') {
+        clearInterval(interval);
+        // Asumir que el endpoint devuelve o se conoce la URL del reporte, o se usa el jobId para obtenerlo.
+        onComplete(jobId); // O bien: onComplete(response.data.pdf_url)
+      }
+    }, 2000);
     
-    return () => clearInterval(interval)
-  }, [jobId])
+    return () => clearInterval(interval);
+  }, [jobId, onComplete]);
 
   return (
     <div className="p-4 bg-white rounded-lg shadow">
@@ -21,10 +26,9 @@ const JobStatus = ({ jobId }) => {
         <div className={`p-2 rounded ${status === 'processing' ? 'bg-blue-100' : 'bg-gray-100'}`}>
           Procesando imágenes...
         </div>
-        {/* Agregar más estados según sea necesario */}
       </div>
     </div>
-  )
-}
+  );
+};
 
 export default JobStatus

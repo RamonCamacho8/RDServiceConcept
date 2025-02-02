@@ -1,12 +1,14 @@
 FROM node:16-alpine
 
 WORKDIR /app
-COPY client/package.json .
+COPY package.json .
 RUN npm install
-COPY client/ .
+COPY . .
+
+ENV VITE_API_URL=http://localhost:8000
 
 ENV NODE_ENV production
 RUN npm run build
 
-EXPOSE 3000
+EXPOSE 4173
 CMD ["npm", "run", "preview"]
