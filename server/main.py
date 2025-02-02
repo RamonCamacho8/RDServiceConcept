@@ -7,25 +7,21 @@ from tasks import process_images
 from celery.result import AsyncResult
 from fastapi.middleware.cors import CORSMiddleware
 
-
 app = FastAPI()
 
-
 origins = [
-    "http://localhost:3000",  # your client URL
-    # Add other allowed origins if needed
+    "http://localhost:3000",  # URL del cliente
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,          # Allows requests from these origins
+    allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],            # Allows all HTTP methods
-    allow_headers=["*"],            # Allows all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-
-# Endpoint to upload images and start the pipeline.
+# Endpoint para subir imágenes e iniciar el pipeline.
 @app.post("/upload")
 async def upload_images(files: List[UploadFile] = File(...)):
     job_id = str(uuid.uuid4())
@@ -38,19 +34,31 @@ async def upload_images(files: List[UploadFile] = File(...)):
             content = await file.read()
             buffer.write(content)
         file_paths.append(file_path)
-    task = process_images.apply_async(args=[job_id, file_paths])
-    return {"job_id": task.id}
+    # Establecer el job_id generado como el task_id de la tarea Celery
+    task = process_images.apply_async(args=[job_id, file_paths], task_id=job_id)
+    return {"job_id": job_id}
 
-# Endpoint to check the status of the pipeline.
+
+# Endpoint para consultar el estado del pipeline.
 @app.get("/status/{job_id}")
 def get_status(job_id: str):
     task = AsyncResult(job_id, app=process_images.app)
-    return {"status": task.state, "info": task.info}
+    # Por defecto, se toma el estado interno de Celery.
+    result_status = task.state
+    # Si la tarea finalizó exitosamente pero incluye un custom_status, se utiliza este.
+    if task.state == "SUCCESS" and isinstance(task.info, dict) and task.info.get("custom_status"):
+        result_status = task.info.get("custom_status")
+    return {"status": result_status, "info": task.info}
 
-# Endpoint to retrieve the generated PDF.
+# Endpoint para recuperar el PDF generado.
 @app.get("/pdf/{job_id}")
 def get_pdf(job_id: str):
     pdf_path = os.path.join("reports", f"{job_id}.pdf")
     if os.path.exists(pdf_path):
-        return FileResponse(pdf_path, media_type="application/pdf", filename=f"{job_id}.pdf")
+        return FileResponse(
+            pdf_path,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"inline; filename={job_id}.pdf"}
+        )
     return {"error": "PDF not found"}
+
