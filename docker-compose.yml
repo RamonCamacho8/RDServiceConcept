@@ -1,0 +1,32 @@
+version: '3.8'
+services:
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+  
+  server:
+    build: ./server
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./server/uploads:/app/uploads
+      - ./server/reports:/app/reports
+    depends_on:
+      - redis
+
+  celery_worker:
+    build: ./server
+    command: celery -A tasks worker --loglevel=info
+    volumes:
+      - ./server/uploads:/app/uploads
+      - ./server/reports:/app/reports
+    depends_on:
+      - redis
+
+  client:
+    build: ./client
+    ports:
+      - "3000:3000"
+    depends_on:
+      - server

@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+celery
+reportlab
+python-multipart
+Pillow
+redis
